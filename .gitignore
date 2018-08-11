@@ -5,4 +5,7 @@ javadoc
 autocomplete_*.zip
 build
 .gradle
-
+.idea
+out
+*.iml
+lib

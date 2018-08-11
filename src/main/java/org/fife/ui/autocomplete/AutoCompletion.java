@@ -675,6 +675,9 @@ public class AutoCompletion {
 		ActionMap am = textComponent.getActionMap();
 		oldTriggerAction = am.get(PARAM_TRIGGER_KEY);
 		am.put(PARAM_TRIGGER_KEY, createAutoCompleteAction());
+
+		// Kojo mod: also add an alternative trigger - for ease of use on the Mac
+		im.put(KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, InputEvent.CTRL_MASK | InputEvent.ALT_MASK), PARAM_TRIGGER_KEY);
 	}
 
 

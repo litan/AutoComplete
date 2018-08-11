@@ -879,23 +879,66 @@ class ParameterizedCompletionContext {
 			}
 
 			// Otherwise, just move to the end.
+			// Version with Kojo related modifications.
 			deactivate();
 			JTextComponent tc = ac.getTextComponent();
 			int dot = tc.getCaretPosition();
-			if (dot!=defaultEndOffs.getOffset()) {
-				tc.setCaretPosition(defaultEndOffs.getOffset());
-			}
-			else {
-				// oldEnterAction isn't what we're looking for (wrong key)
-				Action a = getDefaultEnterAction(tc);
-				if (a!=null) {
-					a.actionPerformed(e);
+			try {
+				int lineEnd = javax.swing.text.Utilities.getRowEnd(tc, dot);
+				int templateEnd = defaultEndOffs.getOffset();
+				if (templateEnd == 0) {
+					// fix for first line in editor
+					int newDot = jumpOverSpecialChars(tc, dot, lineEnd);
+					tc.setCaretPosition(newDot);
+				}
+				else if (dot != templateEnd) {
+					// we finished within the template
+					// move to the end of the template
+					int newDot = defaultEndOffs.getOffset();
+					// if there is something after the template end, jump over special chars
+					if (lineEnd != newDot) {
+						newDot = jumpOverSpecialChars(tc, newDot, lineEnd);
+					}
+					tc.setCaretPosition(newDot);
 				}
 				else {
-					tc.replaceSelection("\n");
+					// we finished at the end of the template
+					if (lineEnd == dot) {
+						// if this is the line end, move to the next line
+
+						// oldEnterAction isn't what we're looking for (wrong
+						// key)
+						Action a = getDefaultEnterAction(tc);
+						if (a != null) {
+							a.actionPerformed(e);
+						}
+						else {
+							tc.replaceSelection("\n");
+						}
+					}
+					else {
+						// if there is something after the template end, jump over special chars
+						tc.setCaretPosition(jumpOverSpecialChars(tc, dot, lineEnd));
+					}
 				}
 			}
+			catch (BadLocationException e1) {
+				// ignore
+			}
+		}
 
+		private boolean isJumpChar(char c) {
+			return c == ')' || c == ']' || c == '}' || c == ',';
+		}
+
+		private int jumpOverSpecialChars(JTextComponent tc, int dot, int lineEnd)
+				throws BadLocationException {
+			String afterText = tc.getDocument().getText(dot, lineEnd - dot);
+			int idx = 0;
+			while (idx < afterText.length() && isJumpChar(afterText.charAt(idx))) {
+				idx++;
+			}
+			return dot + idx;
 		}
 
 		private Action getDefaultEnterAction(JTextComponent tc) {
